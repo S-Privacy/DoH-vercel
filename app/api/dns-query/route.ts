@@ -1,55 +1,93 @@
-const DNS_MESSAGE_TYPE = "application/dns-message"
-const UPSTREAMS = {
-  family: "https://freedns.controld.com/family",
-  standard: "https://freedns.controld.com/p1",
-} as const
+// DNS over HTTPS (DoH) Proxy for Vercel - Mullvad Only
 
-type Mode = keyof typeof UPSTREAMS
+const MULLVAD_DOH = "https://family.dns.mullvad.net/dns-query"
+const DNS_MESSAGE_TYPE = "application/dns-message"
 
 export const runtime = "edge"
-export const preferredRegion = "auto"
+export const preferredRegion = ["fra1", "cdg1", "arn1"]
 
-function headers(): HeadersInit {
+function getResponseHeaders(): HeadersInit {
   return {
     "Content-Type": DNS_MESSAGE_TYPE,
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Accept",
     "Cache-Control": "public, max-age=300",
-    "X-Content-Type-Options": "nosniff",
   }
 }
 
-function upstreamFor(request: Request) {
-  const mode = new URL(request.url).searchParams.get("mode")
-  return UPSTREAMS[mode === "standard" ? "standard" : "family"]
-}
-
-async function proxy(request: Request, init: RequestInit, target = upstreamFor(request)) {
-  try {
-    const response = await fetch(target, {
-      ...init,
-      headers: { ...(init.headers ?? {}), Accept: DNS_MESSAGE_TYPE, "User-Agent": "DoH-Proxy/3.0" },
-    })
-    if (!response.ok) return new Response(`DNS error: ${response.status}`, { status: response.status })
-    return new Response(response.body, { status: 200, headers: headers() })
-  } catch {
-    return new Response("Upstream DNS unavailable", { status: 502, headers: headers() })
-  }
-}
-
+// Handle GET requests
 export async function GET(request: Request) {
-  const dns = new URL(request.url).searchParams.get("dns")
-  if (!dns) return new Response("Missing dns parameter", { status: 400 })
-  const upstream = `${upstreamFor(request)}?dns=${encodeURIComponent(dns)}`
-  return proxy(request, { method: "GET", headers: { Accept: DNS_MESSAGE_TYPE } }, upstream)
+  const { searchParams } = new URL(request.url)
+  const dnsParam = searchParams.get("dns")
 
+  if (!dnsParam) {
+    return new Response("Missing dns parameter", { status: 400 })
+  }
+
+  try {
+    const response = await fetch(`${MULLVAD_DOH}?dns=${dnsParam}`, {
+      method: "GET",
+      headers: {
+        Accept: DNS_MESSAGE_TYPE,
+      },
+    })
+
+    if (!response.ok) {
+      console.log("[v0] Mullvad GET failed:", response.status, response.statusText)
+      return new Response(`Mullvad error: ${response.status}`, { status: response.status })
+    }
+
+    const data = await response.arrayBuffer()
+    return new Response(data, {
+      status: 200,
+      headers: getResponseHeaders(),
+    })
+  } catch (error) {
+    console.log("[v0] Mullvad GET error:", error)
+    return new Response(`Error: ${error}`, { status: 500 })
+  }
 }
 
+// Handle POST requests
 export async function POST(request: Request) {
-  return proxy(request, { method: "POST", headers: { "Content-Type": DNS_MESSAGE_TYPE }, body: request.body })
+  const body = await request.arrayBuffer()
+
+  try {
+    const response = await fetch(MULLVAD_DOH, {
+      method: "POST",
+      headers: {
+        Accept: DNS_MESSAGE_TYPE,
+        "Content-Type": DNS_MESSAGE_TYPE,
+      },
+      body: body,
+    })
+
+    if (!response.ok) {
+      console.log("[v0] Mullvad POST failed:", response.status, response.statusText)
+      return new Response(`Mullvad error: ${response.status}`, { status: response.status })
+    }
+
+    const data = await response.arrayBuffer()
+    return new Response(data, {
+      status: 200,
+      headers: getResponseHeaders(),
+    })
+  } catch (error) {
+    console.log("[v0] Mullvad POST error:", error)
+    return new Response(`Error: ${error}`, { status: 500 })
+  }
 }
 
+// Handle CORS preflight
 export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: { ...headers(), "Access-Control-Max-Age": "86400" } })
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Accept",
+      "Access-Control-Max-Age": "86400",
+    },
+  })
 }
