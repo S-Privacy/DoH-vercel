@@ -14,7 +14,7 @@ const modes = {
   standard: {
     label: "standard",
     description: "Fast Control D resolution without family filtering.",
-    upstream: "freedns.controld.com/p1",
+    upstream: "freedns.controld.com/p2",
   },
 } as const
 
@@ -37,7 +37,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background px-4 py-6 font-mono text-foreground sm:px-8 sm:py-10">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl flex-col border border-border bg-card shadow-[0_0_60px_color-mix(in_oklab,var(--primary)_8%,transparent)]">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl flex-col border border-border bg-card">
         <header className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
           <div className="flex items-center gap-3 text-sm"><Terminal className="text-primary" /><span className="font-semibold">clearpath_dns</span><span className="text-muted-foreground">v1.0.0</span></div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="size-2 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" /> online</div>
@@ -56,9 +56,9 @@ export default function Home() {
           <section className="border border-border bg-background">
             <div className="flex items-center justify-between border-b border-border px-5 py-4 text-xs"><span className="flex items-center gap-2"><Command className="size-4 text-primary" /> resolver_config</span><span className="text-muted-foreground">[interactive]</span></div>
             <div className="flex flex-col gap-6 p-5 sm:p-7">
-              <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># choose a filtering profile</p><ToggleGroup type="single" value={mode} onValueChange={(value) => value && setMode(value as Mode)} className="grid grid-cols-2 gap-2"><ToggleGroupItem value="family" className="justify-start rounded-none border border-border px-4 py-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">[ family ]</ToggleGroupItem><ToggleGroupItem value="standard" className="justify-start rounded-none border border-border px-4 py-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">[ standard ]</ToggleGroupItem></ToggleGroup></div>
+              <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># choose a filtering profile</p><ToggleGroup type="single" value={mode} onValueChange={(value) => value && setMode(value as Mode)} className="grid grid-cols-2 gap-2"><ToggleGroupItem value="family" className="justify-start rounded-none border border-border px-4 py-3 text-xs data-[state=on]:border-[#7fffb2] data-[state=on]:bg-[#173b2b] data-[state=on]:text-[#b8ffd0]">[ family ]</ToggleGroupItem><ToggleGroupItem value="standard" className="justify-start rounded-none border border-border px-4 py-3 text-xs data-[state=on]:border-[#7fffb2] data-[state=on]:bg-[#173b2b] data-[state=on]:text-[#b8ffd0]">[ standard ]</ToggleGroupItem></ToggleGroup></div>
               <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># active upstream</p><div className="border border-border px-4 py-3 text-xs text-primary">{modes[mode].upstream}</div><p className="font-sans text-sm leading-6 text-muted-foreground">{modes[mode].description}</p></div>
-              <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># your DoH endpoint</p><div className="flex items-center gap-3 border border-border bg-card px-4 py-4"><Wifi className="size-4 shrink-0 text-primary" /><code className="min-w-0 flex-1 break-all text-xs">{endpoint}</code></div><Button onClick={copyEndpoint} className="h-11 w-full rounded-none bg-primary font-mono text-xs text-primary-foreground hover:bg-primary/90">{copied ? <Check data-icon="inline-start" /> : <Clipboard data-icon="inline-start" />}{copied ? "copied" : "copy endpoint"}</Button></div>
+              <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># your DoH endpoint</p><div className="flex items-center gap-3 border border-border bg-card px-4 py-4"><Wifi className="size-4 shrink-0 text-primary" /><code className="min-w-0 flex-1 break-all text-xs">{endpoint}</code></div><Button onClick={copyEndpoint} className="h-11 w-full rounded-none bg-[#173b2b] font-mono text-xs text-[#b8ffd0] hover:bg-[#22563d]">{copied ? <Check data-icon="inline-start" /> : <Clipboard data-icon="inline-start" />}{copied ? "copied" : "copy endpoint"}</Button></div>
             </div>
           </section>
         </section>
