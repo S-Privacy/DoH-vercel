@@ -1,13 +1,15 @@
-// DNS over HTTPS (DoH) Proxy for Vercel - Mullvad Family DNS
-// Based on working Cloudflare Workers implementation
-
-const MULLVAD_DOH = "https://freedns.controld.com/family"
 const DNS_MESSAGE_TYPE = "application/dns-message"
+const UPSTREAMS = {
+  family: "https://freedns.controld.com/family",
+  standard: "https://freedns.controld.com/p1",
+} as const
+
+type Mode = keyof typeof UPSTREAMS
 
 export const runtime = "edge"
 export const preferredRegion = "auto"
 
-function getResponseHeaders(): HeadersInit {
+function headers(): HeadersInit {
   return {
     "Content-Type": DNS_MESSAGE_TYPE,
     "Access-Control-Allow-Origin": "*",
@@ -18,72 +20,36 @@ function getResponseHeaders(): HeadersInit {
   }
 }
 
-// Handle GET requests
+function upstreamFor(request: Request) {
+  const mode = new URL(request.url).searchParams.get("mode")
+  return UPSTREAMS[mode === "standard" ? "standard" : "family"]
+}
+
+async function proxy(request: Request, init: RequestInit, target = upstreamFor(request)) {
+  try {
+    const response = await fetch(target, {
+      ...init,
+      headers: { ...(init.headers ?? {}), Accept: DNS_MESSAGE_TYPE, "User-Agent": "DoH-Proxy/3.0" },
+    })
+    if (!response.ok) return new Response(`DNS error: ${response.status}`, { status: response.status })
+    return new Response(response.body, { status: 200, headers: headers() })
+  } catch {
+    return new Response("Upstream DNS unavailable", { status: 502, headers: headers() })
+  }
+}
+
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const dnsParam = searchParams.get("dns")
+  const dns = new URL(request.url).searchParams.get("dns")
+  if (!dns) return new Response("Missing dns parameter", { status: 400 })
+  const upstream = `${upstreamFor(request)}?dns=${encodeURIComponent(dns)}`
+  return proxy(request, { method: "GET", headers: { Accept: DNS_MESSAGE_TYPE } }, upstream)
 
-  if (!dnsParam) {
-    return new Response("Missing dns parameter", { status: 400 })
-  }
-
-  try {
-    const response = await fetch(`${MULLVAD_DOH}?dns=${encodeURIComponent(dnsParam)}`, {
-      method: "GET",
-      headers: {
-        Accept: DNS_MESSAGE_TYPE,
-        "User-Agent": "DoH-Proxy/2.0", // Add User-Agent like CF version
-      },
-    })
-
-    if (!response.ok) {
-      return new Response(`DNS error: ${response.status}`, { status: response.status })
-    }
-
-    return new Response(response.body, {
-      status: 200,
-      headers: getResponseHeaders(),
-    })
-  } catch (error) {
-    return new Response(`Error: ${error}`, { status: 502 })
-  }
 }
 
-// Handle POST requests
 export async function POST(request: Request) {
-  try {
-    const response = await fetch(MULLVAD_DOH, {
-      method: "POST",
-      headers: {
-        Accept: DNS_MESSAGE_TYPE,
-        "Content-Type": DNS_MESSAGE_TYPE,
-        "User-Agent": "DoH-Proxy/2.0", // Add User-Agent
-      },
-      body: request.body, // Stream directly, don't buffer with arrayBuffer()
-    })
-
-    if (!response.ok) {
-      return new Response(`DNS error: ${response.status}`, { status: response.status })
-    }
-
-    return new Response(response.body, {
-      status: 200,
-      headers: getResponseHeaders(),
-    })
-  } catch (error) {
-    return new Response(`Error: ${error}`, { status: 502 })
-  }
+  return proxy(request, { method: "POST", headers: { "Content-Type": DNS_MESSAGE_TYPE }, body: request.body })
 }
 
-// Handle CORS preflight
 export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Accept",
-      "Access-Control-Max-Age": "86400",
-    },
-  })
+  return new Response(null, { status: 204, headers: { ...headers(), "Access-Control-Max-Age": "86400" } })
 }

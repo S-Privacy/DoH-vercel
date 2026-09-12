@@ -1,171 +1,87 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMemo, useState } from "react"
+import { Check, Clipboard, Globe2, LockKeyhole, Moon, Radio, ShieldCheck, Sparkles, Sun, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Shield, Globe, Zap, Lock } from "lucide-react"
-import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+
+const modes = {
+  family: {
+    label: "Family shield",
+    description: "Blocks adult content, malware, and unsafe domains.",
+    upstream: "freedns.controld.com/family",
+  },
+  standard: {
+    label: "Standard",
+    description: "Fast Control D resolution without family filtering.",
+    upstream: "freedns.controld.com/p1",
+  },
+} as const
+
+type Mode = keyof typeof modes
 
 export default function Home() {
+  const [mode, setMode] = useState<Mode>("family")
   const [copied, setCopied] = useState(false)
-  const endpoint = typeof window !== "undefined" ? `${window.location.origin}/api/dns-query` : "/api/dns-query"
+  const [dark, setDark] = useState(true)
 
-  const copyToClipboard = async () => {
-    try {
-      const url = typeof window !== "undefined" ? `${window.location.origin}/api/dns-query` : "/api/dns-query"
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      const textArea = document.createElement("textarea")
-      textArea.value = typeof window !== "undefined" ? `${window.location.origin}/api/dns-query` : "/api/dns-query"
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand("copy")
-      document.body.removeChild(textArea)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
+  const endpoint = useMemo(() => {
+    if (typeof window === "undefined") return `/api/dns-query?mode=${mode}`
+    return `${window.location.origin}/api/dns-query?mode=${mode}`
+  }, [mode])
+
+  async function copyEndpoint() {
+    await navigator.clipboard.writeText(endpoint)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1800)
   }
 
   return (
-    <div className="min-h-screen bg-black text-zinc-50">
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto space-y-12">
-          {/* Hero Section */}
-          <div className="text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 mb-4">
-              <Shield className="w-8 h-8 text-blue-400" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-balance text-zinc-50">DNS over HTTPS</h1>
-            <p className="text-xl text-zinc-400 text-balance max-w-2xl mx-auto">
-              {"A privacy-focused DNS resolver powered by Vercel Edge Functions"}
-            </p>
+    <div className={dark ? "min-h-screen bg-[#071015] text-[#edf7f4]" : "min-h-screen bg-[#edf7f4] text-[#071015]"}>
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+        <nav className="flex items-center justify-between border-b border-[#31504b]/50 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#83f28f] text-[#071015] shadow-[0_0_30px_rgba(131,242,143,0.25)]"><Radio /></div>
+            <span className="font-mono text-sm font-semibold tracking-[0.2em]">CLEARPATH<span className="text-[#83f28f]">.DNS</span></span>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setDark(!dark)} aria-label="Toggle color theme" className="text-current hover:bg-[#31504b]/30">
+            {dark ? <Sun /> : <Moon />}
+          </Button>
+        </nav>
+
+        <section className="grid flex-1 items-center gap-12 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-[#83f28f]"><Sparkles /> private by default</div>
+            <h1 className="max-w-3xl text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.06em] sm:text-7xl">The quiet layer between you and the internet.</h1>
+            <p className="max-w-xl text-pretty text-lg leading-8 text-[#a7bdb8]">A fast, encrypted DNS resolver with Control D protection at the edge. No app. No account. Just a cleaner route to every site.</p>
+            <div className="flex flex-wrap gap-3 text-sm text-[#a7bdb8]"><span className="rounded-full border border-[#31504b] px-4 py-2">Encrypted transport</span><span className="rounded-full border border-[#31504b] px-4 py-2">Edge-routed</span><span className="rounded-full border border-[#31504b] px-4 py-2">Open source</span></div>
           </div>
 
-          {/* Endpoint Card */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-zinc-50">{"Your DoH Endpoint"}</CardTitle>
-              <CardDescription className="text-zinc-400">
-                {"Use this endpoint in any DoH-compatible client"}
-              </CardDescription>
+          <Card className="overflow-hidden rounded-[2rem] border-[#31504b] bg-[#10221f] text-[#edf7f4] shadow-2xl shadow-black/30">
+            <CardHeader className="gap-5 border-b border-[#31504b] p-7 sm:p-9">
+              <div className="flex items-start justify-between gap-4"><div><p className="font-mono text-xs uppercase tracking-[0.2em] text-[#83f28f]">Resolver profile</p><CardTitle className="mt-3 text-2xl tracking-tight">Choose your signal</CardTitle></div><ShieldCheck className="text-[#83f28f]" /></div>
+              <CardDescription className="leading-6 text-[#a7bdb8]">Switch protection without changing your device configuration.</CardDescription>
+              <ToggleGroup type="single" value={mode} onValueChange={(value) => value && setMode(value as Mode)} className="grid grid-cols-2 rounded-2xl bg-[#071015] p-1">
+                <ToggleGroupItem value="family" className="h-auto rounded-xl py-3 data-[state=on]:bg-[#83f28f] data-[state=on]:text-[#071015]">Family shield</ToggleGroupItem>
+                <ToggleGroupItem value="standard" className="h-auto rounded-xl py-3 data-[state=on]:bg-[#83f28f] data-[state=on]:text-[#071015]">Standard</ToggleGroupItem>
+              </ToggleGroup>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-lg font-mono text-sm break-all text-zinc-300">
-                {endpoint}
-              </div>
-              <Button onClick={copyToClipboard} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
-                {copied ? "Copied!" : "Copy Endpoint"}
-              </Button>
+            <CardContent className="flex flex-col gap-6 p-7 sm:p-9">
+              <div><p className="text-lg font-medium">{modes[mode].label}</p><p className="mt-1 text-sm leading-6 text-[#a7bdb8]">{modes[mode].description}</p></div>
+              <div className="flex items-center gap-3 rounded-xl border border-[#31504b] bg-[#071015] p-4"><Globe2 className="shrink-0 text-[#83f28f]" /><code className="min-w-0 flex-1 break-all text-xs text-[#d1e4df]">{endpoint}</code></div>
+              <Button onClick={copyEndpoint} className="h-12 rounded-xl bg-[#83f28f] text-[#071015] hover:bg-[#a5f7ab]">{copied ? <Check data-icon="inline-start" /> : <Clipboard data-icon="inline-start" />}{copied ? "Copied endpoint" : "Copy endpoint"}</Button>
+              <p className="font-mono text-xs text-[#6f918a]">UPSTREAM / {modes[mode].upstream}</p>
             </CardContent>
           </Card>
+        </section>
 
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <Globe className="w-8 h-8 text-blue-400 mb-2" />
-                <CardTitle className="text-lg text-zinc-50">{"Edge Network"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-zinc-400">
-                  {"Deployed on Vercel Edge for low-latency DNS resolution from Dubai"}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <Lock className="w-8 h-8 text-blue-400 mb-2" />
-                <CardTitle className="text-lg text-zinc-50">{"Encrypted"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-zinc-400">
-                  {"All DNS queries are encrypted over HTTPS, protecting your privacy"}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <Zap className="w-8 h-8 text-blue-400 mb-2" />
-                <CardTitle className="text-lg text-zinc-50">{"Fast & Free"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-zinc-400">{"Optimized for speed with zero configuration required"}</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Usage Instructions */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-zinc-50">{"How to Use"}</CardTitle>
-              <CardDescription className="text-zinc-400">
-                {"Configure your devices or applications to use this DoH endpoint"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-semibold text-zinc-50">{"Supported Methods"}</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm text-zinc-400">
-                  <li>{"GET requests with ?dns= parameter (RFC 8484 wireformat)"}</li>
-                  <li>{"POST requests with DNS message body (RFC 8484)"}</li>
-                  <li>{"JSON API via Accept: application/dns-json header"}</li>
-                </ul>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-semibold text-zinc-50">{"Compatible With"}</h3>
-                <ul className="list-disc list-inside space-y-1 text-sm text-zinc-400">
-                  <li>{"Web browsers (Chrome, Firefox, Edge secure DNS settings)"}</li>
-                  <li>{"Mobile apps (Intra, Nebulo, DNSCloak)"}</li>
-                  <li>{"Desktop applications (YogaDNS, AdGuard)"}</li>
-                  <li>{"System-wide DNS configuration"}</li>
-                </ul>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-semibold text-zinc-50">{"Upstream Provider"}</h3>
-                <p className="text-sm text-zinc-400">
-                  {"Currently using Control D Family DNS for content filtering and privacy protection"}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Technical Info */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-zinc-50">{"Technical Details"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between py-2 border-b border-zinc-800">
-                <span className="text-zinc-400">{"Runtime"}</span>
-                <span className="font-mono text-zinc-300">{"Vercel Edge Functions"}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-zinc-800">
-                <span className="text-zinc-400">{"Protocol"}</span>
-                <span className="font-mono text-zinc-300">{"RFC 8484 (DoH)"}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-zinc-800">
-                <span className="text-zinc-400">{"Response Format"}</span>
-                <span className="font-mono text-zinc-300">{"Wireformat / JSON"}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-zinc-400">{"CORS"}</span>
-                <span className="font-mono text-zinc-300">{"Enabled"}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <section className="grid gap-4 border-t border-[#31504b]/50 py-10 sm:grid-cols-3">
+          {[{ icon: LockKeyhole, title: "Encrypted", text: "DNS queries travel over RFC 8484 HTTPS." }, { icon: Zap, title: "Low latency", text: "Resolve close to your users on the edge." }, { icon: ShieldCheck, title: "Control D", text: "Family filtering, malware defense, and privacy." }].map(({ icon: Icon, title, text }) => <div key={title} className="flex gap-4 rounded-2xl border border-[#31504b]/70 bg-[#10221f]/40 p-5"><Icon className="mt-1 shrink-0 text-[#83f28f]" /><div><h2 className="font-medium">{title}</h2><p className="mt-1 text-sm leading-6 text-[#a7bdb8]">{text}</p></div></div>)}
+        </section>
+        <footer className="flex flex-col gap-2 border-t border-[#31504b]/50 py-6 text-xs text-[#6f918a] sm:flex-row sm:items-center sm:justify-between"><span>Clearpath DNS / powered by Vercel Edge</span><span className="font-mono">MODE: {mode.toUpperCase()}</span></footer>
       </main>
-
-      <footer className="border-t border-zinc-800 mt-16 bg-black">
-        <div className="container mx-auto px-4 py-8 text-center text-sm text-zinc-400">
-          <p>{"DNS over HTTPS proxy powered by Vercel Edge Functions"}</p>
-        </div>
-      </footer>
     </div>
   )
 }
+
