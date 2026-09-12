@@ -4,7 +4,7 @@ const MULLVAD_DOH = "https://family.dns.mullvad.net/dns-query"
 const DNS_MESSAGE_TYPE = "application/dns-message"
 
 export const runtime = "edge"
-export const preferredRegion = ["dxb1", "fra1", "cdg1", "arn1"]
+export const preferredRegion = ["fra1", "cdg1", "arn1"]
 
 function getResponseHeaders(): HeadersInit {
   return {
