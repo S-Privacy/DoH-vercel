@@ -1,19 +1,18 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Check, Clipboard, Globe2, LockKeyhole, Moon, Radio, ShieldCheck, Sparkles, Sun, Zap } from "lucide-react"
+import { Check, Clipboard, Command, LockKeyhole, ShieldCheck, Terminal, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 const modes = {
   family: {
-    label: "Family shield",
+    label: "family",
     description: "Blocks adult content, malware, and unsafe domains.",
     upstream: "freedns.controld.com/family",
   },
   standard: {
-    label: "Standard",
+    label: "standard",
     description: "Fast Control D resolution without family filtering.",
     upstream: "freedns.controld.com/p1",
   },
@@ -24,7 +23,6 @@ type Mode = keyof typeof modes
 export default function Home() {
   const [mode, setMode] = useState<Mode>("family")
   const [copied, setCopied] = useState(false)
-  const [dark, setDark] = useState(true)
 
   const endpoint = useMemo(() => {
     if (typeof window === "undefined") return `/api/dns-query?mode=${mode}`
@@ -38,50 +36,35 @@ export default function Home() {
   }
 
   return (
-    <div className={dark ? "min-h-screen bg-[#071015] text-[#edf7f4]" : "min-h-screen bg-[#edf7f4] text-[#071015]"}>
-      <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
-        <nav className="flex items-center justify-between border-b border-[#31504b]/50 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-[#83f28f] text-[#071015] shadow-[0_0_30px_rgba(131,242,143,0.25)]"><Radio /></div>
-            <span className="font-mono text-sm font-semibold tracking-[0.2em]">CLEARPATH<span className="text-[#83f28f]">.DNS</span></span>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => setDark(!dark)} aria-label="Toggle color theme" className="text-current hover:bg-[#31504b]/30">
-            {dark ? <Sun /> : <Moon />}
-          </Button>
-        </nav>
+    <main className="min-h-screen bg-background px-4 py-6 font-mono text-foreground sm:px-8 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-5xl flex-col border border-border bg-card shadow-[0_0_60px_color-mix(in_oklab,var(--primary)_8%,transparent)]">
+        <header className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-7">
+          <div className="flex items-center gap-3 text-sm"><Terminal className="text-primary" /><span className="font-semibold">clearpath_dns</span><span className="text-muted-foreground">v1.0.0</span></div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className="size-2 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" /> online</div>
+        </header>
 
-        <section className="grid flex-1 items-center gap-12 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
-          <div className="flex flex-col gap-8">
-            <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-[#83f28f]"><Sparkles /> private by default</div>
-            <h1 className="max-w-3xl text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.06em] sm:text-7xl">The quiet layer between you and the internet.</h1>
-            <p className="max-w-xl text-pretty text-lg leading-8 text-[#a7bdb8]">A fast, encrypted DNS resolver with Control D protection at the edge. No app. No account. Just a cleaner route to every site.</p>
-            <div className="flex flex-wrap gap-3 text-sm text-[#a7bdb8]"><span className="rounded-full border border-[#31504b] px-4 py-2">Encrypted transport</span><span className="rounded-full border border-[#31504b] px-4 py-2">Edge-routed</span><span className="rounded-full border border-[#31504b] px-4 py-2">Open source</span></div>
+        <section className="grid flex-1 gap-8 p-5 sm:p-8 lg:grid-cols-[1fr_1.1fr] lg:gap-12 lg:p-12">
+          <div className="flex flex-col justify-center gap-7">
+            <div className="text-xs text-primary">$ ./clearpath --status</div>
+            <div className="flex flex-col gap-4">
+              <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-6xl">Private DNS.<br /><span className="text-primary">No noise.</span></h1>
+              <p className="max-w-lg font-sans text-base leading-7 text-muted-foreground">Encrypted DNS over HTTPS with Control D protection. Configure once, then browse with a cleaner signal.</p>
+            </div>
+            <div className="flex flex-col gap-2 border-l-2 border-primary pl-4 text-xs leading-6 text-muted-foreground"><span><span className="text-primary">OK</span> encrypted transport</span><span><span className="text-primary">OK</span> Control D upstream</span><span><span className="text-primary">OK</span> no account required</span></div>
           </div>
 
-          <Card className="overflow-hidden rounded-[2rem] border-[#31504b] bg-[#10221f] text-[#edf7f4] shadow-2xl shadow-black/30">
-            <CardHeader className="gap-5 border-b border-[#31504b] p-7 sm:p-9">
-              <div className="flex items-start justify-between gap-4"><div><p className="font-mono text-xs uppercase tracking-[0.2em] text-[#83f28f]">Resolver profile</p><CardTitle className="mt-3 text-2xl tracking-tight">Choose your signal</CardTitle></div><ShieldCheck className="text-[#83f28f]" /></div>
-              <CardDescription className="leading-6 text-[#a7bdb8]">Switch protection without changing your device configuration.</CardDescription>
-              <ToggleGroup type="single" value={mode} onValueChange={(value) => value && setMode(value as Mode)} className="grid grid-cols-2 rounded-2xl bg-[#071015] p-1">
-                <ToggleGroupItem value="family" className="h-auto rounded-xl py-3 data-[state=on]:bg-[#83f28f] data-[state=on]:text-[#071015]">Family shield</ToggleGroupItem>
-                <ToggleGroupItem value="standard" className="h-auto rounded-xl py-3 data-[state=on]:bg-[#83f28f] data-[state=on]:text-[#071015]">Standard</ToggleGroupItem>
-              </ToggleGroup>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-6 p-7 sm:p-9">
-              <div><p className="text-lg font-medium">{modes[mode].label}</p><p className="mt-1 text-sm leading-6 text-[#a7bdb8]">{modes[mode].description}</p></div>
-              <div className="flex items-center gap-3 rounded-xl border border-[#31504b] bg-[#071015] p-4"><Globe2 className="shrink-0 text-[#83f28f]" /><code className="min-w-0 flex-1 break-all text-xs text-[#d1e4df]">{endpoint}</code></div>
-              <Button onClick={copyEndpoint} className="h-12 rounded-xl bg-[#83f28f] text-[#071015] hover:bg-[#a5f7ab]">{copied ? <Check data-icon="inline-start" /> : <Clipboard data-icon="inline-start" />}{copied ? "Copied endpoint" : "Copy endpoint"}</Button>
-              <p className="font-mono text-xs text-[#6f918a]">UPSTREAM / {modes[mode].upstream}</p>
-            </CardContent>
-          </Card>
+          <section className="border border-border bg-background">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4 text-xs"><span className="flex items-center gap-2"><Command className="size-4 text-primary" /> resolver_config</span><span className="text-muted-foreground">[interactive]</span></div>
+            <div className="flex flex-col gap-6 p-5 sm:p-7">
+              <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># choose a filtering profile</p><ToggleGroup type="single" value={mode} onValueChange={(value) => value && setMode(value as Mode)} className="grid grid-cols-2 gap-2"><ToggleGroupItem value="family" className="justify-start rounded-none border border-border px-4 py-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">[ family ]</ToggleGroupItem><ToggleGroupItem value="standard" className="justify-start rounded-none border border-border px-4 py-3 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">[ standard ]</ToggleGroupItem></ToggleGroup></div>
+              <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># active upstream</p><div className="border border-border px-4 py-3 text-xs text-primary">{modes[mode].upstream}</div><p className="font-sans text-sm leading-6 text-muted-foreground">{modes[mode].description}</p></div>
+              <div className="flex flex-col gap-2"><p className="text-xs text-muted-foreground"># your DoH endpoint</p><div className="flex items-center gap-3 border border-border bg-card px-4 py-4"><Wifi className="size-4 shrink-0 text-primary" /><code className="min-w-0 flex-1 break-all text-xs">{endpoint}</code></div><Button onClick={copyEndpoint} className="h-11 w-full rounded-none bg-primary font-mono text-xs text-primary-foreground hover:bg-primary/90">{copied ? <Check data-icon="inline-start" /> : <Clipboard data-icon="inline-start" />}{copied ? "copied" : "copy endpoint"}</Button></div>
+            </div>
+          </section>
         </section>
 
-        <section className="grid gap-4 border-t border-[#31504b]/50 py-10 sm:grid-cols-3">
-          {[{ icon: LockKeyhole, title: "Encrypted", text: "DNS queries travel over RFC 8484 HTTPS." }, { icon: Zap, title: "Low latency", text: "Resolve close to your users on the edge." }, { icon: ShieldCheck, title: "Control D", text: "Family filtering, malware defense, and privacy." }].map(({ icon: Icon, title, text }) => <div key={title} className="flex gap-4 rounded-2xl border border-[#31504b]/70 bg-[#10221f]/40 p-5"><Icon className="mt-1 shrink-0 text-[#83f28f]" /><div><h2 className="font-medium">{title}</h2><p className="mt-1 text-sm leading-6 text-[#a7bdb8]">{text}</p></div></div>)}
-        </section>
-        <footer className="flex flex-col gap-2 border-t border-[#31504b]/50 py-6 text-xs text-[#6f918a] sm:flex-row sm:items-center sm:justify-between"><span>Clearpath DNS / powered by Vercel Edge</span><span className="font-mono">MODE: {mode.toUpperCase()}</span></footer>
-      </main>
-    </div>
+        <footer className="grid gap-4 border-t border-border px-5 py-5 text-xs text-muted-foreground sm:grid-cols-3 sm:px-8"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /> Control D protected</span><span className="flex items-center gap-2"><LockKeyhole className="size-4 text-primary" /> RFC 8484 / HTTPS</span><span className="text-left sm:text-right">mode={mode} // ready</span></footer>
+      </div>
+    </main>
   )
 }
-
