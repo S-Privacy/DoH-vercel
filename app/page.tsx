@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Check, Clipboard, Globe2, LockKeyhole, Moon, Radio, ShieldCheck, Sparkles, Sun, Zap } from "lucide-react"
+import { Check, Clipboard, Globe2, LockKeyhole, Radio, ShieldCheck, Sparkles, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -24,7 +24,6 @@ type Mode = keyof typeof modes
 export default function Home() {
   const [mode, setMode] = useState<Mode>("family")
   const [copied, setCopied] = useState(false)
-  const [dark, setDark] = useState(true)
 
   const endpoint = useMemo(() => {
     if (typeof window === "undefined") return `/api/dns-query?mode=${mode}`
@@ -38,16 +37,13 @@ export default function Home() {
   }
 
   return (
-    <div className={dark ? "min-h-screen bg-[#071015] text-[#edf7f4]" : "min-h-screen bg-[#edf7f4] text-[#071015]"}>
+    <div className="min-h-screen bg-[#071015] text-[#edf7f4]">
       <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
         <nav className="flex items-center justify-between border-b border-[#31504b]/50 pb-5">
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-xl bg-[#83f28f] text-[#071015] shadow-[0_0_30px_rgba(131,242,143,0.25)]"><Radio /></div>
             <span className="font-mono text-sm font-semibold tracking-[0.2em]">CLEARPATH<span className="text-[#83f28f]">.DNS</span></span>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setDark(!dark)} aria-label="Toggle color theme" className="text-current hover:bg-[#31504b]/30">
-            {dark ? <Sun /> : <Moon />}
-          </Button>
         </nav>
 
         <section className="grid flex-1 items-center gap-12 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:py-20">
